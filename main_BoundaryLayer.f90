@@ -6,13 +6,14 @@
 !! :: latest :: 2020.09.22 Tue
 !! :: ==================================================
 program main 
-	use mod_nonDimensionalNumber
-	use mod_PhysicalProp_2d
 	implicit none
 	!! :: parameter --- --- --- --- --- --- --- --- --- --- --- ---
 	integer,parameter :: Nt = 100
 	integer,parameter :: Neta = 1000
 	real(8),parameter :: ERR_FUNC = 1.d-10
+	real(8),parameter :: gamma = 1.4d0
+	real(8),parameter :: Pr = 0.71d0
+	real(8),parameter :: Ma = 0.3d0
 	real(8),parameter :: Re_x = 10000d0
 	real(8),parameter :: inf_cov = 0.99999d0
 	real(8),parameter :: sup_cov = 1.00001d0
@@ -26,9 +27,7 @@ program main
 	!! :: treatment --- --- --- --- --- --- --- --- --- --- --- ---
 	dt = 1.0d-5
 	deta_BL = 1d-2
-	gamma = 1.4d0
-	Pr = 0.71d0
-	Ma = 0.3d0
+	
 	!! --- --- --- --- --- --- --- --- --- --- --- ---
 	!! :: shooting method
 	!! :: f の二階の導関数の初期値（eta=0）を仮定して，
