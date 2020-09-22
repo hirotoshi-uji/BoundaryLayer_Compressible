@@ -1,3 +1,5 @@
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-AMS_CHTML"></script>
+
 # 圧縮性境界層方程式の数値解
 
 圧縮性流体における境界層方程式を解いた．
