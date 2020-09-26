@@ -9,25 +9,30 @@ program main
 	implicit none
 	!! :: parameter --- --- --- --- --- --- --- --- --- --- --- ---
 	integer,parameter :: Nt = 100
+	integer,parameter :: Nx = 100
 	integer,parameter :: Neta = 1000
 	real(8),parameter :: ERR_FUNC = 1.d-10
 	real(8),parameter :: gamma = 1.4d0
 	real(8),parameter :: Pr = 0.71d0
 	real(8),parameter :: Ma = 0.3d0
-	real(8),parameter :: Re_x = 10000d0
+	real(8),parameter :: kineVisc = 15.2d-6
+	real(8),parameter :: sp_sound = 331.45d0
 	real(8),parameter :: inf_cov = 0.99999d0
 	real(8),parameter :: sup_cov = 1.00001d0
 	!! :: variables --- --- --- --- --- --- --- --- --- --- --- ---
-	integer :: i = 0 , ip1 = 0 , j = 0 , ctt = 0 , ch_conver = 0
-	real(8) :: dt , deta_BL
-	real(8),dimension(0:Neta) :: eta, velo_x, velo_y, Temp, dens
+	integer :: i = 0, ip1 = 0, j = 0, k = 0, ctt = 0, ch_conver = 0, h=0
+	real(8) :: dt , deta_BL, delta, dx
+	real(8) :: sRe
+	real(8) :: Re_x = 10000d0
+	real(8),dimension(0:Nx) :: x
+	real(8),dimension(0:Nx,0:Neta) :: eta, velo_x, velo_y, Temp, dens, y
 	real(8),dimension(1:4,0:2,0:Neta) :: f_k=0d0 , g_k=0d0
 	real(8),dimension(0:3,0:2,0:Neta) :: funcF=1d0 , funcG=1d0
 	real(8),dimension(0:2,0:Neta) :: k_f=0d0 , k_g=0d0
 	!! :: treatment --- --- --- --- --- --- --- --- --- --- --- ---
-	dt = 1.0d-5
 	deta_BL = 1d-2
-	
+	dx = 1d-1
+	sRe = sp_sound * Ma / kineVisc
 	!! --- --- --- --- --- --- --- --- --- --- --- ---
 	!! :: shooting method
 	!! :: f の二階の導関数の初期値（eta=0）を仮定して，
@@ -88,11 +93,27 @@ program main
 	!! :: 
 	!! --- --- --- --- --- --- --- --- --- --- --- ---
 	do j = 0,Neta
-		eta(j) = deta_BL * dble(j) 
-		velo_x(j) = funcF(0,1,j)
-		velo_y(j) = 0.5d0 * ( eta(j) * funcF(0,1,j) - funcF(0,0,j) ) / ( sqrt(Re_x) * funcG(0,0,j) )
-		Temp(j) = funcG(0,0,j)
-		dens(j) = 1d0 / funcG(0,0,j)
+		if(funcF(0,1,j) > 0.99d0 )then
+			delta = deta_BL * dble(j)
+			exit
+		end if
+	end do
+	
+	do k = 1,Nx
+		x(k) = dx * dble(k)
+		Re_x = sRe * x(k)
+		do j = 0,Neta
+			eta(k,j) = deta_BL * dble(j)
+			y(k,j) = 0d0
+			do h = 0,j
+				y(k,j) = y(k,j) + funcG(0,0,h) 
+			end do
+			y(k,j) = y(k,j) * x(k) / sqrt(Re_x) 
+			velo_x(k,j) = funcF(0,1,j)
+			velo_y(k,j) = 0.5d0 * ( eta(k,j) * funcF(0,1,j) - funcF(0,0,j) ) / ( sqrt(Re_x) * funcG(0,0,j) )
+			Temp(k,j) = funcG(0,0,j)
+			dens(k,j) = 1d0 / funcG(0,0,j)
+		end do
 	end do
 	!! --- --- --- --- --- --- --- --- --- --- --- ---
 	!! :: 
@@ -100,8 +121,11 @@ program main
 	!! :: 
 	!! --- --- --- --- --- --- --- --- --- --- --- ---
 	open(unit=11,file="Rs_BL_Rex30000.dat",action="write",status="replace")
+	do k = 1,Nx
 	do j = 0,Neta
-		write(11,'(5(f10.6))')eta(j),velo_x(j),velo_y(j),Temp(j),dens(j)
+		write(11,'(7(f10.5))')x(k),eta(k,j),y(k,j),velo_x(k,j),velo_y(k,j),Temp(k,j),dens(k,j)
+	end do
+	write(11,*)""
 	end do
 	close(11)
 	write(6,*)"end program"
